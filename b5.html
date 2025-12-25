@@ -1,0 +1,1011 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sora2 喜劇提示詞生成器｜我 × 駱駝（擴展地點/場景/梗選項）</title>
+  <style>
+    :root{
+      --bg:#0b0f17; --panel:#111827; --panel2:#0f172a; --line:#243044;
+      --txt:#e5e7eb; --muted:#94a3b8; --brand:#60a5fa; --good:#22c55e; --warn:#f59e0b; --bad:#ef4444;
+      --radius:14px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "PingFang TC","PingFang SC","Microsoft JhengHei","Microsoft YaHei", Arial;
+      background: radial-gradient(1200px 700px at 20% 10%, rgba(96,165,250,.18), transparent 60%),
+                  radial-gradient(900px 600px at 80% 20%, rgba(34,197,94,.12), transparent 55%),
+                  var(--bg);
+      color:var(--txt);
+    }
+    header{max-width:1200px; margin:0 auto; padding:18px 16px 10px;}
+    h1{margin:0 0 6px; font-size:18px}
+    .sub{color:var(--muted); font-size:12px; line-height:1.5}
+    main{max-width:1200px; margin:0 auto; padding:12px 16px 26px; display:grid; grid-template-columns: 1.1fr .9fr; gap:12px;}
+    @media (max-width: 980px){ main{grid-template-columns:1fr;} }
+
+    .card{
+      background: linear-gradient(180deg, rgba(17,24,39,.92), rgba(15,23,42,.92));
+      border:1px solid rgba(36,48,68,.9);
+      border-radius:var(--radius);
+      box-shadow: 0 18px 45px rgba(0,0,0,.35);
+      overflow:hidden;
+    }
+    .hd{display:flex; align-items:center; justify-content:space-between; padding:12px 12px; border-bottom:1px solid rgba(36,48,68,.9); background: rgba(17,24,39,.65);}
+    .title{font-size:13px; letter-spacing:.3px}
+    .pill{font-size:11px; color:#cbd5e1; padding:4px 8px; border-radius:999px; background: rgba(96,165,250,.14); border:1px solid rgba(96,165,250,.3);}
+    .bd{padding:12px}
+    label{display:block; font-size:11px; color:#cbd5e1; margin:0 0 6px}
+    input[type="text"], input[type="number"], textarea, select{
+      width:100%; padding:10px 10px; border-radius:12px;
+      background: rgba(2,6,23,.55);
+      border:1px solid rgba(36,48,68,.95);
+      color:var(--txt);
+      outline:none;
+    }
+    textarea{min-height:80px; resize:vertical}
+    input:focus, textarea:focus, select:focus{border-color: rgba(96,165,250,.65); box-shadow: 0 0 0 3px rgba(96,165,250,.12)}
+    .grid{display:grid; gap:10px}
+    .grid.cols2{grid-template-columns:1fr 1fr}
+    @media (max-width: 620px){ .grid.cols2{grid-template-columns:1fr} }
+    .row{display:flex; gap:10px; flex-wrap:wrap}
+    .btn{
+      appearance:none; border:1px solid rgba(36,48,68,.95);
+      background: rgba(2,6,23,.35);
+      color:var(--txt); padding:9px 10px; border-radius:12px;
+      cursor:pointer; font-size:12px; line-height:1;
+    }
+    .btn.primary{background: rgba(96,165,250,.18); border-color: rgba(96,165,250,.45)}
+    .btn.good{background: rgba(34,197,94,.14); border-color: rgba(34,197,94,.38)}
+    .btn.warn{background: rgba(245,158,11,.14); border-color: rgba(245,158,11,.38)}
+    .btn.bad{background: rgba(239,68,68,.14); border-color: rgba(239,68,68,.38)}
+    .btn:active{transform: translateY(1px)}
+    .muted{color:var(--muted); font-size:11px; line-height:1.45}
+    .hr{height:1px; background: rgba(36,48,68,.95); margin:10px 0}
+    .toggle{
+      display:flex; align-items:center; gap:8px;
+      padding:8px 10px; border-radius:12px;
+      background: rgba(2,6,23,.35); border:1px solid rgba(36,48,68,.95);
+      font-size:12px; color:#cbd5e1;
+    }
+    .toggle input{accent-color: var(--brand)}
+    .out{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size:12px; line-height:1.55;
+      white-space:pre-wrap; word-break:break-word;
+      padding:12px; border-radius:12px;
+      background: rgba(2,6,23,.65);
+      border:1px solid rgba(36,48,68,.95);
+      min-height:260px;
+    }
+    .kvs{
+      display:grid; grid-template-columns:1fr; gap:8px;
+      padding:10px; border-radius:12px;
+      background: rgba(2,6,23,.35); border:1px dashed rgba(36,48,68,.95);
+      margin-bottom:10px;
+    }
+    .kline{display:flex; gap:8px; justify-content:space-between; font-size:11px; color:#cbd5e1}
+    .kline b{color:#f1f5f9; font-weight:600}
+    .toast{
+      position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+      background: rgba(15,23,42,.95); color:var(--txt);
+      border:1px solid rgba(36,48,68,.95);
+      padding:10px 12px; border-radius:999px;
+      font-size:12px; display:none;
+      box-shadow: 0 18px 45px rgba(0,0,0,.35);
+    }
+    .small{font-size:10px; color:#94a3b8}
+    .tagrow{display:flex; gap:8px; flex-wrap:wrap}
+    .chip{
+      font-size:11px; padding:6px 10px; border-radius:999px;
+      background: rgba(96,165,250,.10);
+      border:1px solid rgba(96,165,250,.25);
+      color:#cbd5e1; cursor:pointer;
+      user-select:none;
+    }
+    .chip[data-on="1"]{
+      background: rgba(34,197,94,.12);
+      border-color: rgba(34,197,94,.35);
+      color:#eafff1;
+    }
+  </style>
+</head>
+
+<body>
+<header>
+  <h1>Sora2 喜劇提示詞生成器｜我 × 駱駝（地點/場景/梗多選項版）</h1>
+  <div class="sub">
+    新增：<b>城市氛圍下拉</b>、<b>具體場景下拉</b>、<b>梗庫下拉</b>（可隨機、可自訂追加）。
+  </div>
+</header>
+
+<main>
+  <!-- 左：輸入 -->
+  <section class="card">
+    <div class="hd">
+      <div class="title">設定 + 選項</div>
+      <div class="row">
+        <button class="btn" id="btnLoad">載入上次</button>
+        <button class="btn warn" id="btnSave">保存</button>
+        <button class="btn bad" id="btnReset">重置</button>
+      </div>
+    </div>
+
+    <div class="bd grid">
+      <div class="grid cols2">
+        <div>
+          <label>時長（秒）</label>
+          <input id="duration" type="number" min="1" max="60" value="10" />
+        </div>
+        <div>
+          <label>畫幅比例</label>
+          <select id="aspect">
+            <option value="16:9">16:9（橫）</option>
+            <option value="9:16">9:16（直）</option>
+            <option value="1:1">1:1</option>
+            <option value="4:3">4:3</option>
+            <option value="21:9">21:9（超寬）</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid cols2">
+        <div>
+          <label>風格</label>
+          <select id="stylePreset">
+            <option value="real_cine">寫實電影感（日常喜劇）</option>
+            <option value="miniature">微縮布景（布偶/模型喜劇）</option>
+            <option value="docu">紀實手持（像被偷拍）</option>
+            <option value="commercial">商業廣告反差（像正經廣告但很荒唐）</option>
+          </select>
+        </div>
+        <div>
+          <label>節奏</label>
+          <select id="pace">
+            <option value="fast">快節奏（3段式）</option>
+            <option value="mid">中節奏（2段式）</option>
+            <option value="one_take">一鏡到底（更尷尬）</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 城市氛圍 + 具體場景（多選項下拉） -->
+      <div class="grid cols2">
+        <div>
+          <label>地點 / 城市氛圍（選項）</label>
+          <select id="placeSel"></select>
+          <div class="row" style="margin-top:8px">
+            <button class="btn" id="btnPlaceToInput">套用</button>
+            <button class="btn" id="btnPlaceRand">隨機</button>
+          </div>
+        </div>
+        <div>
+          <label>具體場景（選項）</label>
+          <select id="sceneSel"></select>
+          <div class="row" style="margin-top:8px">
+            <button class="btn" id="btnSceneToInput">套用</button>
+            <button class="btn" id="btnSceneRand">隨機</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid cols2">
+        <div>
+          <label>地點 / 城市氛圍（最終輸出，可手改）</label>
+          <input id="place" type="text" value="台北街頭（潮濕夜風、人行道霓虹反光）" />
+        </div>
+        <div>
+          <label>具體場景（最終輸出，可手改）</label>
+          <input id="scene" type="text" value="便利商店門口（玻璃門反光、等紅綠燈人群）" />
+        </div>
+      </div>
+
+      <div class="grid cols2">
+        <div>
+          <label>主角（你）</label>
+          <input id="me" type="text" value="@tonkhsueh"/>
+        </div>
+        <div>
+          <label>駱駝人設（可多選）</label>
+          <div class="tagrow" id="camelChips"></div>
+          <div class="small" style="margin-top:6px">點選標籤可疊加性格。</div>
+        </div>
+      </div>
+
+      <div class="grid cols2">
+        <div class="toggle">
+          <input id="hasDialogue" type="checkbox" checked />
+          <span>有字幕 / 短對白（冷幽默）</span>
+        </div>
+        <div class="toggle">
+          <input id="noDialogue" type="checkbox" />
+          <span>無對白（純動作）</span>
+        </div>
+      </div>
+
+      <div class="grid cols2">
+        <div class="toggle">
+          <input id="useNeg" type="checkbox" checked />
+          <span>負面約束（穩定/無水印）</span>
+        </div>
+        <div class="toggle">
+          <input id="useSafety" type="checkbox" checked />
+          <span>合規（避免商標/路人臉）</span>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <!-- 五類事件 -->
+      <div class="grid cols2">
+        <div><label>① 日常翻車（起）</label><select id="evt1"></select></div>
+        <div><label>② 駱駝失控（承）</label><select id="evt2"></select></div>
+      </div>
+      <div class="grid cols2">
+        <div><label>③ 身份反差（轉）</label><select id="evt3"></select></div>
+        <div><label>④ 對話冷幽默（合）</label><select id="evt4"></select></div>
+      </div>
+      <div class="grid">
+        <div><label>⑤ 結尾反轉（最後1秒）</label><select id="evt5"></select></div>
+      </div>
+
+      <!-- 梗庫 -->
+      <div class="grid cols2">
+        <div>
+          <label>梗（選項庫）</label>
+          <select id="gagSel"></select>
+          <div class="row" style="margin-top:8px">
+            <button class="btn" id="btnGagToInput">套用</button>
+            <button class="btn" id="btnGagRand">隨機</button>
+          </div>
+        </div>
+        <div>
+          <label>自訂梗（最終輸出，可手改）</label>
+          <input id="customGag" type="text" placeholder="例如：駱駝把我名片咬走當點心；我假裝不認識牠" />
+          <div class="small" style="margin-top:6px">留空也可，將只用下拉梗。</div>
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="btn primary" id="btnGen">生成提示詞</button>
+        <button class="btn good" id="btnCopy">複製</button>
+        <button class="btn" id="btnRandAll">隨機全套（含地點/場景/梗）</button>
+        <button class="btn" id="btnJSON">匯出JSON</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="grid">
+        <div>
+          <label>負面約束（可追加）</label>
+          <input id="negExtra" type="text" placeholder="例如：避免過度超現實漂浮；避免臉崩；避免大幅度抖動" />
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 右：輸出 -->
+  <section class="card">
+    <div class="hd">
+      <div class="title">輸出（可直接貼 Sora2）</div>
+      <span class="pill" id="badge">未生成</span>
+    </div>
+    <div class="bd">
+      <div class="kvs">
+        <div class="kline"><span>時長</span><b id="sDur">-</b></div>
+        <div class="kline"><span>比例</span><b id="sAsp">-</b></div>
+        <div class="kline"><span>地點</span><b id="sPla">-</b></div>
+        <div class="kline"><span>場景</span><b id="sScn">-</b></div>
+        <div class="kline"><span>梗</span><b id="sGag">-</b></div>
+        <div class="kline"><span>駱駝人設</span><b id="sCam">-</b></div>
+      </div>
+
+      <label class="small" style="margin-bottom:6px; display:block;">最終提示詞</label>
+      <div class="out" id="out"></div>
+      <div class="muted" id="note" style="margin-top:8px"></div>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================
+   A) 事件庫（五類）
+   ========================= */
+const EVT1 = [
+  "正在走路","排隊等東西","坐下來休息","吃東西","喝飲料","看手機","拍照","過馬路","進電梯","出電梯",
+  "坐公車","坐捷運","打車","騎摩托","逛街","進便利店","點餐","等上菜","結帳","找座位",
+  "看風景","迷路","問路","看地圖","等人","聊天","發呆","拍影片","直播","假裝很專業"
+];
+const EVT2 = [
+  "突然停下來","突然往反方向走","堅持站在原地","開始亂聞","對路人產生興趣","盯著食物不走","堅持要坐下","堅持要站著","自己決定路線","無視我的存在",
+  "裝作沒聽見","假裝很乖","下一秒突然亂來","對鏡頭搶戲","對陌生人示好","對陌生人冷漠","搶走我的東西","把東西丟地上","站在C位不動","把我擠到角落",
+  "突然變得很慢","突然變得很快","表情極度無辜","表情極度嫌棄","對我翻白眼","一臉『你自己看著辦』","明顯在演","完全不演了","比我還像人","一副老油條狀態"
+];
+const EVT3 = [
+  "大家以為我是寵物","大家以為牠是老闆","大家以為我在打工","大家以為牠在遛我","大家以為是行為藝術","大家以為是街頭表演","大家以為在拍廣告","大家以為是網紅團隊","大家以為是紀錄片","大家以為是社會實驗",
+  "被路人指指點點","被要求合影","被圍觀","被偷拍","被當成很正常","被當成不太正常","被當成見怪不怪","被當成『這城市什麼都有』","被當成本地特色","被當成旅遊項目",
+  "被問誰是負責人","被問聽誰的","被問誰做主","被問能不能摸","被問能不能合照","被問是不是AI","被問是不是道具","被問是不是演員","被問是不是假的","被問『牠會說話嗎』"
+];
+const EVT4 = [
+  "我認真解釋規則","我試圖講道理","我假裝很冷靜","我威脅牠","我求牠","我跟牠商量","我開始妥協","我宣布決定","我改變主意","我放棄溝通",
+  "牠沉默","牠點頭但不動","牠搖頭但繼續","牠看向別處","牠突然靠近鏡頭","牠突然后退","牠用表情回應","牠用動作敷衍","牠明顯在拖時間","牠一臉『你說完了嗎』",
+  "我開始自言自語","我開始說服自己","我假裝贏了","我宣布結束","我假裝一切正常","我承認失敗","我開始懷疑人生","我懷疑牠是故意的","我意識到我輸了","我選擇沉默"
+];
+const EVT5 = [
+  "我以為事情順利結束","我以為牠終於配合","我以為一切回歸正常","我以為可以鬆一口氣","我以為可以離開","我以為可以總結","我以為可以收尾","我以為可以關鏡頭","我以為轉身就沒事","我以為點頭就結束",
+  "牠突然再度行動","牠直接搶走主角位","牠打破第四面牆直視鏡頭","牠做出關鍵動作","牠留下最後一擊","牠獲得最終勝利","牠成為唯一焦點","牠一臉無辜像沒事","牠彷彿早就知道","牠把我邊緣化成背景",
+  "我徹底輸了","我無話可說","我只能接受","我直接離開畫面","鏡頭只剩牠","鏡頭慢慢拉遠","畫面突然切黑","螢幕出現『未完待續』","異常仍在暗處","真正故事才要開始"
+];
+
+/* =========================
+   B) 地點/城市氛圍（40）
+   ========================= */
+const PLACE_OPTIONS = [
+  "台北街頭（潮濕夜風、人行道霓虹反光）",
+  "台北捷運站（冷白燈、廣播回音、匆忙人流）",
+  "台北夜市（油煙香、叫賣聲、擁擠走道）",
+  "台北巷弄咖啡區（安靜、文青、路邊單車）",
+  "台北雨天路口（雨傘海、積水反射、車流）",
+  "台北清晨公園（慢跑聲、鳥鳴、霧氣）",
+  "台北河濱步道（風大、單車鈴、遠景高樓）",
+  "台北商圈人潮（快節奏、廣告屏、拍照人群）",
+  "台北市政府周邊（大樓玻璃、通勤人潮）",
+  "台北老街（招牌密集、復古店面、觀光客）",
+
+  "新北夜色街區（機車多、路燈昏黃）",
+  "淡水傍晚（海風、夕陽、遊客嘈雜）",
+  "九份雨霧（石階潮濕、燈籠暖光）",
+  "基隆港邊（鹹味海風、漁船聲）",
+  "台中逛街區（寬人行道、乾爽明亮）",
+  "台南老城（慢節奏、騎樓陰影、古味）",
+  "高雄港區（空曠、海風、工業感）",
+  "花蓮車站周邊（旅人、行李箱、山海空氣）",
+  "宜蘭雨天（濕冷、稻田風、溫泉霧）",
+  "澎湖海邊（強風、鹽味、低矮房）",
+
+  "東京站周邊（秩序、快節奏、廣播聲）",
+  "大阪商店街（吆喝、密集招牌、人情味）",
+  "香港中環（高密度、電車聲、急促步伐）",
+  "新加坡地鐵（乾淨、冷氣強、規則感）",
+  "首爾弘大（年輕、街頭藝人、夜色）",
+  "曼谷夜市（潮濕、燈串、香料味）",
+  "上海街頭（大屏幕、車流、繁忙）",
+  "北京胡同（安靜、灰牆、路邊小店）",
+  "武漢江灘（風大、江面霧、散步人群）",
+  "成都街頭（慢、茶香、悠閒）",
+
+  "室內購物中心（冷氣、回音、燈光均勻）",
+  "車站候車區（行李、人群、廣播提示）",
+  "機場出境區（拖行李聲、指示牌）",
+  "社區市場（吆喝、塑膠袋、菜味）",
+  "校園門口（放學人潮、機車臨停）",
+  "展覽館入口（安檢、排隊、海報牆）",
+  "工業園區路邊（空曠、警示燈、金屬感）",
+  "住宅巷口（小吃攤、路燈、貓叫）",
+  "海邊木棧道（風聲、浪聲、鹽霧）",
+  "山區公路休息點（冷、霧、遠景）"
+];
+
+/* =========================
+   C) 具體場景（50）
+   ========================= */
+const SCENE_OPTIONS = [
+  "便利商店門口（玻璃門反光、店內冷白光）",
+  "便利商店收銀台前（排隊、條碼嗶嗶聲）",
+  "捷運閘門口（刷卡聲、人潮推擠）",
+  "捷運月台（列車進站風、廣播回音）",
+  "公車站牌旁（車來車往、等車人群）",
+  "斑馬線路口（紅綠燈倒數、車流急）",
+  "路邊騎樓（陰影、招牌、躲雨的人）",
+  "夜市入口（招牌密集、油煙霧）",
+  "小吃攤前（老闆忙、塑膠椅）",
+  "飲料店窗口（取號、封膜機聲）",
+
+  "咖啡店門口（玻璃窗、座位稀疏）",
+  "咖啡店吧台（咖啡機蒸汽聲）",
+  "餐廳等候區（叫號、尷尬站著）",
+  "餐廳座位旁（服務鈴、碗盤聲）",
+  "商場電梯口（上上下下、鏡面牆）",
+  "手扶梯入口（人流上行、廣告板）",
+  "商場中庭（音樂、拍照點）",
+  "服飾店試衣間外（等候、鏡子多）",
+  "超市結帳區（推車、掃碼聲）",
+  "超市生鮮區（冷霧、冰櫃反光）",
+
+  "藥局門口（招牌亮、門鈴聲）",
+  "銀行ATM前（排隊、保全視線）",
+  "郵局櫃檯（叫號機、表格桌）",
+  "公園長椅旁（小孩跑、狗叫）",
+  "公園健身器材區（嘎吱聲）",
+  "河濱自行車道旁（鈴聲、風）",
+  "停車場入口（柵欄、警示音）",
+  "機車停等區（機車怠速聲）",
+  "巷口垃圾車點（音樂聲、居民提袋）",
+  "自助洗衣店（滾筒聲、螢光燈）",
+
+  "影印店櫃台（紙張聲、訂書機）",
+  "書店走道（安靜、翻頁聲）",
+  "書店收銀台（刷條碼、紙袋聲）",
+  "文具店貨架（貼紙、彩筆牆）",
+  "快遞驛站（包裹堆、掃碼聲）",
+  "展覽館入口（安檢門、工作人員）",
+  "售票亭前（排隊、售票窗口）",
+  "街頭拍照點（路人穿梭、腳架）",
+  "路邊警察局門口（嚴肅、反差）",
+  "社區管理室（登記、對講機）",
+
+  "海邊堤防上（風大、浪聲）",
+  "觀光老街拱門下（人潮擠、招牌）",
+  "雨棚下躲雨區（滴水聲、鞋底水痕）",
+  "天橋上（車流聲、強風）",
+  "地下街走廊（回音、霓虹燈）",
+  "公廁外洗手台（流水聲、尷尬）",
+  "自動販賣機前（投幣聲、掉落聲）",
+  "夜間停車格旁（路燈昏黃、影子長）",
+  "路邊紅綠燈箱（倒數顯示、等待）",
+  "街角小摊（收款提示音、塑膠袋聲）"
+];
+
+/* =========================
+   D) 梗庫（80）
+   ========================= */
+const GAG_OPTIONS = [
+  "駱駝把我的名片咬走當點心，我只能微笑點頭",
+  "我伸手要牽牠，牠伸手（蹄）把我推回去",
+  "我在講規則，牠直接盯著鏡頭像在讀彈幕",
+  "我排隊排到一半，牠把我換到隊尾",
+  "我努力維持體面，牠用『嫌棄臉』把我打回原形",
+  "我想拍帥照，牠每次都卡在鏡頭正中央",
+  "我拿出手機導航，牠直接帶我走另一條更『有主見』的路",
+  "我叫牠不要動，牠偏偏只在『最尷尬時刻』動",
+  "我裝作在拍廣告，牠真的演得比我專業",
+  "我結帳時掏卡，牠先把卡『叼走』像在審核",
+
+  "我試著講道理，牠用沉默把我講到自閉",
+  "我說『最後一次』，牠用表情告訴我『你每次都這樣說』",
+  "我比手勢叫牠過來，牠比手勢叫我過去",
+  "我在等紅燈，牠先坐下像在開會",
+  "我說『別鬧』，牠立刻表演『我沒鬧』",
+  "我想低調走人，牠突然獲得全場掌聲",
+  "我剛要收尾，牠轉身把我擠出畫面",
+  "我試圖牽牠走，牠把我牽走（反轉）",
+  "我努力解釋，路人反而問牠『你還好嗎』",
+  "我像主人，牠像經紀人",
+
+  "我請牠配合一下，牠用『裝無辜』把我逼到道歉",
+  "我拿出小零食誘導，牠收下但不動",
+  "我說『看這邊』，牠看別邊，我看鏡頭尷尬定格",
+  "我跟路人說『牠很乖』，牠立刻做相反的事",
+  "我說『別看鏡頭』，牠瞬間直視鏡頭破第四面牆",
+  "我想走快一點，牠慢到像在拍慢動作",
+  "我想走慢一點，牠快到像在趕高鐵",
+  "我在講重點，牠在講『眼神戲』",
+  "我想維持嚴肅，牠把嚴肅變成尷尬",
+  "我以為牠聽不懂，其實牠只是懶得理我",
+
+  "我按電梯，牠按『關門』把我關在外面（安全演法：差點關）",
+  "我跟牠合照，牠只露半張臉比我更上鏡",
+  "我對鏡頭自我介紹，牠在後面默默搶主角位",
+  "我拿出水，牠喝一口後把瓶子給路人",
+  "我說『走啦』，牠說不出話但用行為說『不走』",
+  "我說『你看人家都在看』，牠更用力表演",
+  "我說『低調』，牠把我推到C位",
+  "我說『C位給你』，牠反手把我推回去",
+  "我以為是我遛牠，其實是牠在遛我",
+  "我努力當導演，牠努力當主演",
+
+  "我喊『Action』，牠喊不出但立刻進入狀態",
+  "我喊『Cut』，牠還在演，演到我懷疑人生",
+  "我問牠想吃什麼，牠盯著我的錢包",
+  "我把地圖攤開，牠用蹄踩住最重要那一角",
+  "我問路人，路人先跟牠打招呼再跟我說話",
+  "我試圖道歉，牠像在等我寫檢討",
+  "我以為牠害羞，其實牠在蓄力搞事",
+  "我一緊張就講太多，牠用一個眼神讓我閉嘴",
+  "我把東西放好，牠立刻給我『重新排列』",
+  "我假裝沒事，牠假裝更沒事",
+
+  "我想當成熟大人，牠讓我回到幼稚狀態",
+  "我想講道理，牠想講效率（直接走）",
+  "我以為牠迷路，其實牠只是想逛街",
+  "我以為牠怕人群，其實牠喜歡被看",
+  "我以為牠在鬧，其實牠在掌控節奏",
+  "我說『別亂聞』，牠聞得更專業",
+  "我說『別靠近』，牠靠近到鏡頭起霧",
+  "我說『別坐下』，牠坐得像在開記者會",
+  "我說『別站中間』，牠站得更正中",
+  "我想低調收尾，牠在最後一秒做最關鍵的事",
+
+  "我說『我們走』，牠說『你先走』的表情",
+  "我說『這很尷尬』，牠表情：『尷尬的是你』",
+  "我剛說『都OK』，牠立刻讓我不OK",
+  "我以為我贏了，牠用最後一擊把我秒殺",
+  "我剛說『拍完了』，牠對鏡頭點頭像在說『未完待續』",
+  "我以為沒人看，結果一堆人只看牠不看我",
+  "我轉身就走，牠留在鏡頭裡像在主持節目",
+  "我想當主角，牠讓我當字幕",
+  "我想當旁白，牠讓我當背景音",
+  "我想說結語，牠用一個眼神直接切黑"
+];
+
+/* =========================
+   E) 駱駝性格 Chips
+   ========================= */
+const CAMEL_TRAITS = [
+  {id:"goofy",  text:"憨憨"},
+  {id:"lazy",   text:"擺爛"},
+  {id:"slick",  text:"老油條"},
+  {id:"innoc",  text:"裝無辜"},
+  {id:"bossy",  text:"很有主見"},
+  {id:"camera", text:"搶鏡頭"}
+];
+
+/* =========================
+   F) 風格預設
+   ========================= */
+const STYLE_PRESETS = {
+  real_cine: {
+    head: "Realistic cinematic comedy，日常場景反差喜劇，畫面真實、質感清晰、主體穩定。",
+    cam: "手持或滑軌輕推，鏡頭克制但節奏明確。",
+    light: "自然光或柔光，人物與材質真實，不過度美顏。",
+    detail: "輕微膠片顆粒、城市環境音、真實人群動線。"
+  },
+  miniature: {
+    head: "寫實微縮布景喜劇，布偶/模型質感清晰可見，像真實布偶舞台拍攝。",
+    cam: "低機位慢推 + 微距特寫，強調材質與景深。",
+    light: "舞台聚光 + 氛圍燈，布料纖維、木紋、膠痕可見。",
+    detail: "舞台環境聲 + 道具碰撞聲，尷尬節奏更好笑。"
+  },
+  docu: {
+    head: "紀實偷拍感喜劇，像路人手機拍到的尷尬瞬間，真實、快速、自然。",
+    cam: "手持跟拍，輕微晃動但可讀，偶爾拉近抓表情。",
+    light: "現場光，略有高光反射但不過曝。",
+    detail: "現場噪音、腳步聲、車流聲，路人反應真實。"
+  },
+  commercial: {
+    head: "正經商業廣告語氣 + 荒唐反差喜劇，畫面精緻、構圖高級。",
+    cam: "滑軌、轉台、微距材質特寫，最後用英雄鏡頭定格。",
+    light: "影棚柔光箱 + 輪廓邊光，反射乾淨。",
+    detail: "字幕一本正經，內容卻很荒唐，形成反差。"
+  }
+};
+
+/* =========================
+   G) 負面約束 / 合規
+   ========================= */
+const DEFAULT_NEG = [
+  "低清晰度","糊","噪點過重","過曝","欠曝","色偏嚴重",
+  "水印","logo","真實品牌商標","亂碼文字",
+  "臉崩","手指異常","肢體畸形","穿模","抖動過度","幀間不一致",
+  "主體丟失","畫面崩壞"
+];
+const SAFETY_NOTE = "注：避免出現真實品牌Logo、商標、店名特寫與可識別路人臉部；字幕使用原創短句。";
+
+/* =========================
+   H) DOM helpers
+   ========================= */
+const $ = (id)=>document.getElementById(id);
+const toast = $("toast");
+const out = $("out");
+
+function showToast(msg){
+  toast.textContent = msg;
+  toast.style.display = "block";
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(()=>toast.style.display="none", 1500);
+}
+function nowBadge(){
+  const d = new Date();
+  const hh = String(d.getHours()).padStart(2,"0");
+  const mm = String(d.getMinutes()).padStart(2,"0");
+  $("badge").textContent = `已生成 ${hh}:${mm}`;
+}
+function fillSelect(sel, arr, labelPrefix=""){
+  sel.innerHTML = "";
+  arr.forEach((t,i)=>{
+    const opt = document.createElement("option");
+    opt.value = t;
+    opt.textContent = `${labelPrefix}${String(i+1).padStart(2,"0")}. ${t}`;
+    sel.appendChild(opt);
+  });
+}
+function randPick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function selectedTraits(){
+  return CAMEL_TRAITS.filter(t=>{
+    const el = document.querySelector(`.chip[data-id="${t.id}"]`);
+    return el && el.dataset.on === "1";
+  }).map(t=>t.text);
+}
+
+function setSummary(){
+  $("sDur").textContent = ($("duration").value||"-") + "s";
+  $("sAsp").textContent = $("aspect").value||"-";
+  $("sPla").textContent = $("place").value?.trim() || "-";
+  $("sScn").textContent = $("scene").value?.trim() || "-";
+  const gag = ($("customGag").value.trim() || $("gagSel").value || "").trim();
+  $("sGag").textContent = gag ? (gag.length>26 ? gag.slice(0,26)+"…" : gag) : "（未選）";
+  const tr = selectedTraits();
+  $("sCam").textContent = tr.length ? tr.join("、") : "（未選）";
+}
+
+async function copyOut(){
+  const text = out.textContent || "";
+  if(!text.trim()){ showToast("沒有可複製內容"); return; }
+  try{
+    await navigator.clipboard.writeText(text);
+    showToast("已複製");
+  }catch(e){
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    showToast("已複製");
+  }
+}
+
+/* =========================
+   I) 故事/提示詞組裝
+   ========================= */
+function buildStoryLine(){
+  const me = $("me").value.trim() || "我";
+  const place = $("place").value.trim() || "城市";
+  const scene = $("scene").value.trim() || "街頭";
+  const t = selectedTraits();
+  const camelPersona = t.length ? `駱駝性格：${t.join("、")}。` : "駱駝性格：憨憨但很有主見。";
+
+  const e1 = $("evt1").value;
+  const e2 = $("evt2").value;
+  const e3 = $("evt3").value;
+  const e4 = $("evt4").value;
+  const e5 = $("evt5").value;
+
+  // 梗：自訂優先，否則用下拉
+  const gag = ($("customGag").value.trim() || $("gagSel").value || "").trim();
+
+  const lines = [
+    `地點：${place}｜場景：${scene}。`,
+    camelPersona,
+    `${me}帶著駱駝做日常事：${e1}。`,
+    `駱駝突然：${e2}，事情立刻走偏。`,
+    `路人反應：${e3}，誤會/圍觀升級。`,
+    gag ? `核心梗：${gag}。` : "",
+    `互動（冷幽默）：${e4}（用表情與動作帶梗）。`,
+    `結尾反轉：${e5}，最後1秒定格在最尷尬的表情/姿勢。`
+  ].filter(Boolean);
+
+  return lines.join("\n");
+}
+
+function buildPrompt(){
+  const dur = String($("duration").value || 10).trim();
+  const asp = $("aspect").value;
+  const presetKey = $("stylePreset").value;
+  const pace = $("pace").value;
+  const preset = STYLE_PRESETS[presetKey];
+
+  const hasDialogue = $("hasDialogue").checked;
+  const noDialogue = $("noDialogue").checked;
+
+  let dialogueLine = "";
+  if(noDialogue){
+    dialogueLine = "無對白，無字幕，只用表情與動作完成笑點。";
+  }else if(hasDialogue){
+    dialogueLine = "可用短字幕/短句冷幽默（每句不超過10字），不要連續長段對話。";
+  }else{
+    dialogueLine = "無對白（可保留環境聲）。";
+  }
+
+  let pacingLine = "";
+  if(pace === "fast"){
+    pacingLine = "節奏：快，三段式（建立→翻車→反轉），鏡頭短促但主體清晰。";
+  }else if(pace === "mid"){
+    pacingLine = "節奏：中，兩段式（翻車逐步升級→最後反轉），鏡頭停留更久更尷尬。";
+  }else{
+    pacingLine = "節奏：一鏡到底，尷尬逐步累積，最後一秒反轉收束。";
+  }
+
+  const story = buildStoryLine();
+
+  let neg = "";
+  if($("useNeg").checked){
+    const extra = $("negExtra").value.trim();
+    const merged = [...DEFAULT_NEG];
+    if(extra){
+      extra.split(/[,，;；]/).map(s=>s.trim()).filter(Boolean).forEach(x=>merged.push(x));
+    }
+    neg = "負面約束：" + Array.from(new Set(merged)).join("，") + "。";
+  }
+
+  const safety = $("useSafety").checked ? SAFETY_NOTE : "";
+
+  return `Sora2 Prompt（喜劇｜我×駱駝）
+${preset.head}
+時長 ${dur}s。畫幅 ${asp}。
+${pacingLine}
+鏡頭：${preset.cam}
+光照：${preset.light}
+細節：${preset.detail}
+聲音：環境聲為主（腳步、人群、車流、道具碰撞），笑點靠節奏與反差。
+${dialogueLine}
+
+故事/事件（按此拍）：
+${story}
+
+畫面要求：主體始終可讀、構圖乾淨、動作自然、不要過度超現實。
+${neg}
+${safety}`.trim();
+}
+
+/* =========================
+   J) 保存 / 載入 / 匯出
+   ========================= */
+function getState(){
+  return {
+    duration: $("duration").value,
+    aspect: $("aspect").value,
+    stylePreset: $("stylePreset").value,
+    pace: $("pace").value,
+
+    placeSel: $("placeSel").value,
+    sceneSel: $("sceneSel").value,
+    gagSel: $("gagSel").value,
+
+    place: $("place").value,
+    scene: $("scene").value,
+    me: $("me").value,
+
+    hasDialogue: $("hasDialogue").checked,
+    noDialogue: $("noDialogue").checked,
+    useNeg: $("useNeg").checked,
+    useSafety: $("useSafety").checked,
+
+    evt1: $("evt1").value,
+    evt2: $("evt2").value,
+    evt3: $("evt3").value,
+    evt4: $("evt4").value,
+    evt5: $("evt5").value,
+
+    customGag: $("customGag").value,
+    negExtra: $("negExtra").value,
+    camelTraits: selectedTraits()
+  };
+}
+function setState(st){
+  if(!st) return;
+  if(st.duration) $("duration").value = st.duration;
+  if(st.aspect) $("aspect").value = st.aspect;
+  if(st.stylePreset) $("stylePreset").value = st.stylePreset;
+  if(st.pace) $("pace").value = st.pace;
+
+  if(st.placeSel) $("placeSel").value = st.placeSel;
+  if(st.sceneSel) $("sceneSel").value = st.sceneSel;
+  if(st.gagSel) $("gagSel").value = st.gagSel;
+
+  if(typeof st.place === "string") $("place").value = st.place;
+  if(typeof st.scene === "string") $("scene").value = st.scene;
+  if(typeof st.me === "string") $("me").value = st.me;
+
+  $("hasDialogue").checked = !!st.hasDialogue;
+  $("noDialogue").checked = !!st.noDialogue;
+  $("useNeg").checked = st.useNeg !== false;
+  $("useSafety").checked = st.useSafety !== false;
+
+  if(st.evt1) $("evt1").value = st.evt1;
+  if(st.evt2) $("evt2").value = st.evt2;
+  if(st.evt3) $("evt3").value = st.evt3;
+  if(st.evt4) $("evt4").value = st.evt4;
+  if(st.evt5) $("evt5").value = st.evt5;
+
+  if(typeof st.customGag === "string") $("customGag").value = st.customGag;
+  if(typeof st.negExtra === "string") $("negExtra").value = st.negExtra;
+
+  if(Array.isArray(st.camelTraits)){
+    CAMEL_TRAITS.forEach(t=>{
+      const el = document.querySelector(`.chip[data-id="${t.id}"]`);
+      if(!el) return;
+      el.dataset.on = st.camelTraits.includes(t.text) ? "1" : "0";
+    });
+  }
+  setSummary();
+}
+
+function exportJSON(){
+  const data = getState();
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "sora2_camel_comedy_config.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* =========================
+   K) 初始化
+   ========================= */
+function initChips(){
+  const box = $("camelChips");
+  box.innerHTML = "";
+  CAMEL_TRAITS.forEach(t=>{
+    const el = document.createElement("div");
+    el.className = "chip";
+    el.dataset.id = t.id;
+    el.dataset.on = "0";
+    el.textContent = t.text;
+    el.addEventListener("click", ()=>{
+      el.dataset.on = (el.dataset.on === "1") ? "0" : "1";
+      setSummary();
+    });
+    box.appendChild(el);
+  });
+}
+
+function init(){
+  initChips();
+
+  fillSelect($("evt1"), EVT1);
+  fillSelect($("evt2"), EVT2);
+  fillSelect($("evt3"), EVT3);
+  fillSelect($("evt4"), EVT4);
+  fillSelect($("evt5"), EVT5);
+
+  fillSelect($("placeSel"), PLACE_OPTIONS, "P");
+  fillSelect($("sceneSel"), SCENE_OPTIONS, "S");
+  fillSelect($("gagSel"), GAG_OPTIONS, "G");
+
+  // 預設
+  $("evt1").value = EVT1[0];
+  $("evt2").value = EVT2[12];
+  $("evt3").value = EVT3[12];
+  $("evt4").value = EVT4[0];
+  $("evt5").value = EVT5[10];
+
+  $("placeSel").value = PLACE_OPTIONS[0];
+  $("sceneSel").value = SCENE_OPTIONS[0];
+  $("gagSel").value = GAG_OPTIONS[0];
+
+  setSummary();
+
+  // 互斥：無對白 vs 字幕
+  $("noDialogue").addEventListener("change", ()=>{
+    if($("noDialogue").checked) $("hasDialogue").checked = false;
+  });
+  $("hasDialogue").addEventListener("change", ()=>{
+    if($("hasDialogue").checked) $("noDialogue").checked = false;
+  });
+
+  // 套用按鈕
+  $("btnPlaceToInput").addEventListener("click", ()=>{
+    $("place").value = $("placeSel").value;
+    setSummary(); showToast("已套用地點/氛圍");
+  });
+  $("btnSceneToInput").addEventListener("click", ()=>{
+    $("scene").value = $("sceneSel").value;
+    setSummary(); showToast("已套用具體場景");
+  });
+  $("btnGagToInput").addEventListener("click", ()=>{
+    $("customGag").value = $("gagSel").value;
+    setSummary(); showToast("已套用梗到自訂欄");
+  });
+
+  // 隨機按鈕
+  $("btnPlaceRand").addEventListener("click", ()=>{
+    $("placeSel").value = randPick(PLACE_OPTIONS);
+    showToast("地點已隨機"); 
+  });
+  $("btnSceneRand").addEventListener("click", ()=>{
+    $("sceneSel").value = randPick(SCENE_OPTIONS);
+    showToast("場景已隨機");
+  });
+  $("btnGagRand").addEventListener("click", ()=>{
+    $("gagSel").value = randPick(GAG_OPTIONS);
+    showToast("梗已隨機");
+  });
+
+  // 隨機全套
+  $("btnRandAll").addEventListener("click", ()=>{
+    $("evt1").value = randPick(EVT1);
+    $("evt2").value = randPick(EVT2);
+    $("evt3").value = randPick(EVT3);
+    $("evt4").value = randPick(EVT4);
+    $("evt5").value = randPick(EVT5);
+    $("placeSel").value = randPick(PLACE_OPTIONS);
+    $("sceneSel").value = randPick(SCENE_OPTIONS);
+    $("gagSel").value = randPick(GAG_OPTIONS);
+    // 自動套用到輸入（更方便）
+    $("place").value = $("placeSel").value;
+    $("scene").value = $("sceneSel").value;
+    $("customGag").value = $("gagSel").value;
+    setSummary();
+    showToast("已隨機全套並套用");
+  });
+
+  // 生成
+  $("btnGen").addEventListener("click", ()=>{
+    out.textContent = buildPrompt();
+    $("note").textContent = "";
+    nowBadge();
+    showToast("已生成");
+  });
+
+  // 複製
+  $("btnCopy").addEventListener("click", copyOut);
+
+  // 保存/載入
+  $("btnSave").addEventListener("click", ()=>{
+    localStorage.setItem("SORA2_CAMEL_COMEDY_STATE_V2", JSON.stringify(getState()));
+    showToast("已保存");
+  });
+  $("btnLoad").addEventListener("click", ()=>{
+    const raw = localStorage.getItem("SORA2_CAMEL_COMEDY_STATE_V2");
+    if(!raw){ showToast("沒有保存資料"); return; }
+    try{ setState(JSON.parse(raw)); showToast("已載入"); }
+    catch(e){ showToast("載入失敗"); }
+  });
+
+  // 重置
+  $("btnReset").addEventListener("click", ()=>{
+    $("duration").value = 10;
+    $("aspect").value = "16:9";
+    $("stylePreset").value = "real_cine";
+    $("pace").value = "fast";
+
+    $("placeSel").value = PLACE_OPTIONS[0];
+    $("sceneSel").value = SCENE_OPTIONS[0];
+    $("gagSel").value = GAG_OPTIONS[0];
+
+    $("place").value = PLACE_OPTIONS[0];
+    $("scene").value = SCENE_OPTIONS[0];
+
+    $("hasDialogue").checked = true;
+    $("noDialogue").checked = false;
+    $("useNeg").checked = true;
+    $("useSafety").checked = true;
+
+    $("negExtra").value = "";
+    $("customGag").value = "";
+
+    $("evt1").value = EVT1[0];
+    $("evt2").value = EVT2[12];
+    $("evt3").value = EVT3[12];
+    $("evt4").value = EVT4[0];
+    $("evt5").value = EVT5[10];
+
+    document.querySelectorAll(".chip").forEach(el=>el.dataset.on="0");
+
+    out.textContent = "";
+    $("note").textContent = "";
+    $("badge").textContent = "未生成";
+    setSummary();
+    showToast("已重置");
+  });
+
+  // JSON 匯出
+  $("btnJSON").addEventListener("click", exportJSON);
+
+  // 監聽輸入更新摘要
+  ["duration","aspect","place","scene","customGag","stylePreset","pace"].forEach(id=>{
+    $(id).addEventListener("input", setSummary);
+    $(id).addEventListener("change", setSummary);
+  });
+
+  // 自動恢復
+  try{
+    const raw = localStorage.getItem("SORA2_CAMEL_COMEDY_STATE_V2");
+    if(raw){
+      setState(JSON.parse(raw));
+      $("badge").textContent = "已恢復上次配置";
+    }
+  }catch(e){}
+}
+
+init();
+</script>
+</body>
+</html>
